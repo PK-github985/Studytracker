@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Tracker </title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            padding: 1rem;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tracker-type {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: #fff;
+            padding: 0.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .type-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .type-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        select {
+            appearance: none;
+            background: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 0.8rem center/1.2em;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button.primary {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button.primary svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        button.primary:active {
+            transform: scale(0.98);
+        }
+
+        .entries-section {
+            margin-top: 2rem;
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .entry-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+            transition: transform 0.2s ease;
+        }
+
+        .entry-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .entry-card.study { border-color: var(--primary); }
+        .entry-card.mock { border-color: var(--secondary); }
+
+        .delete-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--danger);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .delete-btn:hover {
+            opacity: 0.9;
+        }
+
+        .date-day {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--secondary);
+            transition: width 0.3s ease;
+        }
+
+        .download-btn {
+            background: var(--secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .total-stats {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Study Tracker </h1>
+        </div>
+
+        <div class="tracker-type">
+            <button class="type-btn active" onclick="showForm('study')">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                Study Hours
+            </button>
+            <button class="type-btn" onclick="showForm('mock')">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                Mock Test
+            </button>
+        </div>
+
+        <div id="studyForm" class="input-group">
+            <input type="number" id="studyHours" placeholder="Study Hours (e.g., 2.5)" step="0.1">
+            <button class="primary" onclick="addEntry('study')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Add Session
+            </button>
+        </div>
+
+        <div id="mockForm" class="input-group" style="display: none;">
+            <select id="subject" required>
+                <option value="">Select Subject</option>
+                <option>Full test</option>
+                <option>Mathematics</option>
+                <option>Physics</option>
+                <option>Chemistry</option>
+            </select>
+            <input type="number" id="obtainedMarks" placeholder="Marks Obtained">
+            <input type="number" id="totalMarks" placeholder="Total Marks">
+            <button class="primary" onclick="addEntry('mock')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Add Test
+            </button>
+        </div>
+
+        <div class="entries-section">
+            <button class="primary toggle-entries" onclick="toggleEntries()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+                Show History
+            </button>
+            
+            <div id="entriesList" style="display: none; margin-top: 1.5rem;">
+                <div id="studySection">
+                    <div class="stats-header">
+                        <h2 class="section-title">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                            </svg>
+                            Study Sessions
+                        </h2>
+                        <div class="download-btn" onclick="downloadPDF('study')">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            PDF
+                        </div>
+                    </div>
+                    <div class="total-stats" id="studyStats"></div>
+                    <div id="studyEntries"></div>
+                </div>
+
+                <div id="mockSection" style="display: none;">
+                    <div class="stats-header">
+                        <h2 class="section-title">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Mock Tests
+                        </h2>
+                        <div class="download-btn" onclick="downloadPDF('mock')">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            PDF
+                        </div>
+                    </div>
+                    <div class="total-stats" id="mockStats"></div>
+                    <div id="mockEntries"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let entries = JSON.parse(localStorage.getItem('studyTrackerPro')) || [];
+        let entriesVisible = false;
+        let currentType = 'study';
+
+        function showForm(type) {
+            currentType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('studyForm').style.display = type === 'study' ? 'block' : 'none';
+            document.getElementById('mockForm').style.display = type === 'mock' ? 'block' : 'none';
+        }
+
+        function getCurrentDate() {
+            const date = new Date();
+            return {
+                date: date.toISOString().split('T')[0],
+                day: date.toLocaleDateString('en-US', { weekday: 'long' })
+            };
+        }
+
+        function addEntry(type) {
+            const { date, day } = getCurrentDate();
+            let value, subject;
+
+            if (type === 'study') {
+                const hours = document.getElementById('studyHours').value;
+                if (!hours || hours <= 0) {
+                    alert('Please enter valid study hours');
+                    return;
+                }
+                value = parseFloat(hours).toFixed(1);
+            } else {
+                subject = document.getElementById('subject').value;
+                const obtained = document.getElementById('obtainedMarks').value;
+                const total = document.getElementById('totalMarks').value;
+                if (!subject) {
+                    alert('Please select a subject');
+                    return;
+                }
+                if (obtained == null || total == null || obtained < 0 || total <= 0 || obtained > total) {
+                      alert('Please enter valid marks');
+                           return;
+                           
+             }
+   value = `${obtained}/${total}`;
+            }
+
+            const entry = {
+                type,
+                value,
+                subject,
+                date,
+                day,
+                timestamp: Date.now(),
+                id: Date.now()
+            };
+
+            entries.unshift(entry);
+            localStorage.setItem('studyTrackerPro', JSON.stringify(entries));
+            if(entriesVisible) displayEntries();
+            clearInputs();
+            updateStats();
+        }
+
+        function toggleEntries() {
+            entriesVisible = !entriesVisible;
+            document.getElementById('entriesList').style.display = entriesVisible ? 'block' : 'none';
+            document.querySelector('.toggle-entries').innerHTML = entriesVisible ? 
+                `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                </svg>
+                Hide History` : 
+                `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+                Show History`;
+
+            document.getElementById('studySection').style.display = currentType === 'study' ? 'block' : 'none';
+            document.getElementById('mockSection').style.display = currentType === 'mock' ? 'block' : 'none';
+            
+            if(entriesVisible) {
+                displayEntries();
+                updateStats();
+            }
+        }
+
+        function displayEntries() {
+            const studyEntries = document.getElementById('studyEntries');
+            const mockEntries = document.getElementById('mockEntries');
+            studyEntries.innerHTML = '';
+            mockEntries.innerHTML = '';
+            
+            entries.forEach(entry => {
+                const entryEl = document.createElement('div');
+                entryEl.className = `entry-card ${entry.type}`;
+                
+                const content = entry.type === 'study' ? `
+                    <div class="date-day">
+                        ${entry.date} • ${entry.day}
+                        ${isDeletable(entry.timestamp) ? 
+                            `<div class="delete-btn" onclick="deleteEntry(${entry.id})">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Delete
+                            </div>` : ''}
+                    </div>
+                    <h3>📚 Study Session</h3>
+                    <div class="marks-container">
+                        <span>${entry.value} hours</span>
+                    </div>
+                ` : `
+                    <div class="date-day">
+                        ${entry.date} • ${entry.day}
+                        ${isDeletable(entry.timestamp) ? 
+                            `<div class="delete-btn" onclick="deleteEntry(${entry.id})">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Delete
+                            </div>` : ''}
+                    </div>
+                    <h3>📝 ${entry.subject}</h3>
+                    <div class="marks-container">
+                        <span style="background: #d1fae5;">${entry.value} marks</span>
+                        <span>${Math.round((entry.value.split('/')[0]/entry.value.split('/')[1])*100)}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(entry.value.split('/')[0]/entry.value.split('/')[1])*100}%"></div>
+                    </div>
+                `;
+
+                entryEl.innerHTML = content;
+                entry.type === 'study' ? 
+                    studyEntries.appendChild(entryEl) : 
+                    mockEntries.appendChild(entryEl);
+            });
+        }
+
+        function updateStats() {
+            const studyStats = document.getElementById('studyStats');
+            const mockStats = document.getElementById('mockStats');
+            
+            const studyData = entries.filter(e => e.type === 'study');
+            const mockData = entries.filter(e => e.type === 'mock');
+            
+            const totalStudyHours = studyData.reduce((acc, curr) => acc + parseFloat(curr.value), 0).toFixed(1);
+            const averageMockScore = mockData.length > 0 ? 
+                (mockData.reduce((acc, curr) => {
+                    const [obtained, total] = curr.value.split('/');
+                    return acc + (obtained/total)*100;
+                }, 0) / mockData.length).toFixed(1) : 0;
+
+            studyStats.innerHTML = `Total Study Hours: <strong>${totalStudyHours}h</strong>`;
+            mockStats.innerHTML = `Average Score: <strong>${averageMockScore}%</strong>`;
+        }
+
+        function isDeletable(timestamp) {
+            return (Date.now() - timestamp) < 600000; // 10 minutes
+        }
+
+        function deleteEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            localStorage.setItem('studyTrackerPro', JSON.stringify(entries));
+            displayEntries();
+            updateStats();
+        }
+
+        function clearInputs() {
+            document.getElementById('studyHours').value = '';
+            document.getElementById('subject').value = '';
+            document.getElementById('obtainedMarks').value = '';
+            document.getElementById('totalMarks').value = '';
+        }
+
+        function downloadPDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const filteredEntries = entries.filter(e => e.type === type);
+            
+            doc.setFontSize(18);
+            doc.text(`${type === 'study' ? 'Study Sessions' : 'Mock Tests'} Report`, 20, 20);
+            doc.setFontSize(12);
+            
+            let y = 30;
+            filteredEntries.forEach(entry => {
+                const text = type === 'study' ?
+                    `${entry.date}: ${entry.value} hours` :
+                    `${entry.date} - ${entry.subject}: ${entry.value} (${Math.round(
+                        (entry.value.split('/')[0]/entry.value.split('/')[1])*100)}%)`;
+
+                if(y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+                
+                doc.text(text, 20, y);
+                y += 10;
+            });
+
+            doc.save(`${type}-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        // Initial display if entries exist
+        if(entries.length > 0) {
+            updateStats();
+        }
+    </script>
+</body>
+</html>
